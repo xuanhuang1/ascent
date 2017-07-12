@@ -4,10 +4,14 @@
     {
         "filters": 
             { "verify": { "type_name": "blueprint_verify",
-                          "params": { "protocol": "mesh"}}
+                          "params": { "protocol": "mesh"}},
+              "verdict": { "type_name": "verdict"}
              },
         "connections":
-             [ { "src": ":source", "dest": "verify"} ]
+             [ 
+               { "src": ":source", "dest": "verify"},
+               { "src": "verify", "dest": "verdict"}
+             ]
     }
   },
   { "action": "execute"},
