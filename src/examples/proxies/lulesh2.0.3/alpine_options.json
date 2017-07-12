@@ -1,4 +1,1 @@
-{
-  "pipeline/type"    : "vtkm",
-  "pipeline/backend" : "serial"
-}
+{ "pipeline": {"type": "flow"} }

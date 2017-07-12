@@ -55,10 +55,16 @@ set(LULESH_SOURCES
     lulesh-util.cc 
     lulesh-init.cc)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/verdict/vtkverdict)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/verdict/vtkverdict)
+
+add_subdirectory("verdict")
+
+
 configure_file(alpine_actions.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_actions.json COPYONLY)
 configure_file(alpine_options.json ${CMAKE_CURRENT_BINARY_DIR}/alpine_options.json COPYONLY)
 
-set(lulesh_deps alpine)
+set(lulesh_deps alpine verdict)
 
 if(OPENMP_FOUND)
    set(lulesh_openmp_flags "-DLULESH_USE_OPENMP")
