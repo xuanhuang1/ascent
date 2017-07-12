@@ -181,7 +181,22 @@ Alpine::execute(const conduit::Node &actions)
 
 //-----------------------------------------------------------------------------
 void
+<<<<<<< 573481722b420ea7b6d980aa0726cead6f568f48
 Alpine::close()
+=======
+Alpine::Execute()
+{
+    // exec using only json file input
+    Node actions;
+    CheckForJSONFile("alpine_actions.json", actions);
+    m_pipeline->Execute(actions);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Alpine::Close()
+>>>>>>> add verdict filter for lulesh
 {
     if(m_pipeline != NULL)
     {

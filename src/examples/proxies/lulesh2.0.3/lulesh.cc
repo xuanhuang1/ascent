@@ -164,6 +164,7 @@ Additional BSD Notice
 
 #include "conduit.hpp"
 #include "alpine.hpp"
+#include "alpine_flow_verdict_filter.hpp"
 
 using namespace conduit;
 using namespace alpine;
@@ -2853,7 +2854,19 @@ int main(int argc, char *argv[])
    //
    // setup Alpine In-situ rendering.
    //
+<<<<<<< 573481722b420ea7b6d980aa0726cead6f568f48
     Alpine alpine;
+=======
+   
+   // register our custom filter so we can use it in our data flow network
+   
+    if(!alpine::flow::Workspace::supports_filter_type<VerdictFilter>())
+    {
+        alpine::flow::Workspace::register_filter_type<VerdictFilter>();
+    }
+   
+    Alpine sman;
+>>>>>>> add verdict filter for lulesh
     Node alpine_opts;
 
 #if USE_MPI
@@ -2887,6 +2900,7 @@ int main(int argc, char *argv[])
       //-- begin calls to alpine -- //
       if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0))
       {
+<<<<<<< 573481722b420ea7b6d980aa0726cead6f568f48
             char outFileName[30];
             sprintf(outFileName,"lulesh_image%03d",locDom->cycle()); 
             //
@@ -2903,6 +2917,28 @@ int main(int argc, char *argv[])
             draw["action"] = "draw_plots";
             alpine.publish(locDom->visitNode());
             alpine.execute(actions);
+=======
+           //////
+           ////// NOTE: THESE ARE OVERRIDDEN VIA alpine_options.json and alpine_actions.json
+           //////
+
+            // char outFileName[30];
+            // sprintf(outFileName,"lulesh_image%03d",locDom->cycle());
+            // //
+            // // Create the actions.
+            // //
+            // conduit::Node actions;
+            // conduit::Node &add = actions.append();
+            // add["action"] = "add_plot";
+            // add["field_name"] = "p";
+            // conduit::Node &draw = actions.append();
+            // add["render_options/file_name"] = outFileName;
+            // add["render_options/width"]  = 1024;
+            // add["render_options/height"] = 1024;
+            // draw["action"] = "draw_plots";
+            sman.Publish(locDom->visitNode());
+            sman.Execute();
+>>>>>>> add verdict filter for lulesh
       }
    }
    alpine.close();

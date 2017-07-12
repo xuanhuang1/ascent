@@ -42,78 +42,28 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: alpine.hpp
+/// file: alpine_flow_verdict_filter.hpp
 ///
 //-----------------------------------------------------------------------------
+#ifndef ALPINE_FLOW_VERDICT_FILTER_HPP
+#define ALPINE_FLOW_VERDICT_FILTER_HPP
 
-#ifndef ALPINE_HPP
-#define ALPINE_HPP
+/// Simple filter that calcs verdict's mesh quality metrics each element
+/// in a blueprint conforming hex mesh.
 
+#include <alpine_flow.hpp>
 
-#include <alpine_config.h>
-#include <alpine_exports.h>
-
-
-#include <alpine_logging.hpp>
-#include <alpine_file_system.hpp>
-#include <alpine_block_timer.hpp>
-
-#include <conduit.hpp>
-#include <conduit_blueprint.hpp>
-
-
-//-----------------------------------------------------------------------------
-// -- begin alpine:: --
-//-----------------------------------------------------------------------------
-namespace alpine
-{
-
-// Forward Declare the alpine::Pipeline interface class.
-class Pipeline;
-
-//-----------------------------------------------------------------------------
-/// Alpine Interface
-//-----------------------------------------------------------------------------
-class ALPINE_API Alpine
+class VerdictFilter: public alpine::flow::Filter
 {
 public:
-           Alpine();
-          ~Alpine();
-
-<<<<<<< 573481722b420ea7b6d980aa0726cead6f568f48
-    void   open(); // open with default options
-    void   open(const conduit::Node &options);
-    void   publish(const conduit::Node &data);
-    void   execute(const conduit::Node &actions);
-    void   close();
-=======
-    void   Open(); // open with default options
-    void   Open(const conduit::Node &options);
-    void   Publish(const conduit::Node &data);
-    void   Execute();
-    void   Execute(const conduit::Node &actions);
-    void   Close();
->>>>>>> add verdict filter for lulesh
-
-private:
-    
-    Pipeline *m_pipeline;
+    VerdictFilter();
+    ~VerdictFilter();
+        
+    void declare_interface(conduit::Node &i);
+    void execute();
 };
-
-
-//-----------------------------------------------------------------------------
-std::string ALPINE_API about();
-
-//-----------------------------------------------------------------------------
-void        ALPINE_API about(conduit::Node &node);
-
-};
-//-----------------------------------------------------------------------------
-// -- end alpine:: --
-//-----------------------------------------------------------------------------
 
 #endif
 //-----------------------------------------------------------------------------
