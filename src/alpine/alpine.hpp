@@ -83,20 +83,12 @@ public:
            Alpine();
           ~Alpine();
 
-<<<<<<< 573481722b420ea7b6d980aa0726cead6f568f48
     void   open(); // open with default options
     void   open(const conduit::Node &options);
     void   publish(const conduit::Node &data);
     void   execute(const conduit::Node &actions);
+    void   execute();
     void   close();
-=======
-    void   Open(); // open with default options
-    void   Open(const conduit::Node &options);
-    void   Publish(const conduit::Node &data);
-    void   Execute();
-    void   Execute(const conduit::Node &actions);
-    void   Close();
->>>>>>> add verdict filter for lulesh
 
 private:
     

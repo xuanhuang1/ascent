@@ -5,12 +5,17 @@
         "filters": 
             { "verify": { "type_name": "blueprint_verify",
                           "params": { "protocol": "mesh"}},
-              "verdict": { "type_name": "verdict"}
+              "verdict": { "type_name": "verdict"},
+              "save": { "type_name": "relay_io_save",
+                        "params": {"path": "tout_lulesh_",
+                                   "protocol": "blueprint/mesh/hdf5"}
+                      }
              },
         "connections":
              [ 
                { "src": ":source", "dest": "verify"},
-               { "src": "verify", "dest": "verdict"}
+               { "src": "verify", "dest": "verdict"},
+               { "src": "verdict", "dest": "save"}
              ]
     }
   },
