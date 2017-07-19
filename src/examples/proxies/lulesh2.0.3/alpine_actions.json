@@ -7,7 +7,7 @@
                           "params": { "protocol": "mesh"}},
               "verdict": { "type_name": "verdict"},
               "save": { "type_name": "relay_io_save",
-                        "params": {"path": "tout_lulesh_",
+                        "params": {"path": "tout_lulesh",
                                    "protocol": "blueprint/mesh/hdf5"}
                       }
              },
