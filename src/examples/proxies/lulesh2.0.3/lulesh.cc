@@ -2918,6 +2918,32 @@ int main(int argc, char *argv[])
             // draw["action"] = "draw_plots";
             alpine.publish(locDom->visitNode());
             alpine.execute();
+
+
+            if(myRank == 0)
+            {
+                // drop trigger file every 10 cycles
+                if( (locDom->cycle() % 10) == 0)
+                {
+                    // check of the dir exists
+                    if(!directory_exists("trigger_files"))
+                    {
+                        // if not create it
+                        create_directory("trigger_files");
+                    }
+                
+                    // drop our trigger file
+                    char fname_buff[128];
+                    snprintf(fname_buff,
+                             sizeof(fname_buff),
+                             "trigger_files/trigger_cycle_%06d.txt",
+                             locDom->cycle());
+                    FILE *f = fopen(fname_buff,"w");
+                    fclose(f);
+                    
+                    ALPINE_INFO("Creating file " << fname_buff);
+                 }
+            }
       }
    }
    alpine.close();
