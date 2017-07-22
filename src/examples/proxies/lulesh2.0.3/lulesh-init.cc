@@ -198,7 +198,7 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       ALPINE_BLOCK_TIMER(COPY_DATA)
       m_alpine_node["state/time"].set_external(&m_time);
       m_alpine_node["state/cycle"].set_external(&m_cycle);
-      m_alpine_node["state/domain"] = myRank;
+      m_alpine_node["state/domain_id"] = myRank;
       m_alpine_node["state/info"] = "In Situ Pseudocolor rendering of Pressure from <br> LULESH Shock-Hydro Proxy Simulation";
 
       m_alpine_node["coordsets/coords/type"] = "explicit";
