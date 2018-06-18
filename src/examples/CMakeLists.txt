@@ -52,7 +52,7 @@ add_subdirectory(proxies/lulesh2.0.3)
 add_subdirectory(proxies/kripke)
 add_subdirectory(proxies/cloverleaf3d-ref)
 add_subdirectory(synthetic/noise)
-add_subdirectory(synthetic/blow)
+add_subdirectory(synthetic/ultroids)
 
 # install using and python examples
 install(DIRECTORY using-with-cmake using-with-make python tutorial

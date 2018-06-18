@@ -44,63 +44,63 @@
 
 ###############################################################################
 #
-# Blow CMake Build for Ascent
+# Ultroids CMake Build for Ascent
 #
 ###############################################################################
 
-set(blow_sources
-    blow.cpp
+set(ultroids_sources
+    ultroids.cpp
     )
 
-set(blow_header
+set(ultroids_header
     )
 
 
 if(ENABLE_FOUND)
-  set(blow_openmp_flags "-DBLOW_USE_OPENMP")
+  set(ultroids_openmp_flags "-DBLOW_USE_OPENMP")
 else()
-   set(blow_openmp_flags "")
+   set(ultroids_openmp_flags "")
 endif()
 
 blt_add_executable(
-    NAME        blow_ser
-    SOURCES     ${blow_sources}
+    NAME        ultroids_ser
+    SOURCES     ${ultroids_sources}
     DEPENDS_ON  ascent
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-blt_add_target_compile_flags(TO blow_ser FLAGS "${blow_openmp_flags}")
+blt_add_target_compile_flags(TO ultroids_ser FLAGS "${ultroids_openmp_flags}")
 
-# install target for blow example
-install(TARGETS blow_ser
+# install target for ultroids example
+install(TARGETS ultroids_ser
         EXPORT  ascent
-        LIBRARY DESTINATION examples/synthetic/blow
-        ARCHIVE DESTINATION examples/synthetic/blow
-        RUNTIME DESTINATION examples/synthetic/blow
+        LIBRARY DESTINATION examples/synthetic/ultroids
+        ARCHIVE DESTINATION examples/synthetic/ultroids
+        RUNTIME DESTINATION examples/synthetic/ultroids
 )
 
-install(FILES ASCENT_README.md DESTINATION examples/synthetic/blow)
+install(FILES ASCENT_README.md DESTINATION examples/synthetic/ultroids)
 
 #if(MPI_FOUND)
 #    
-#    set(blow_par_deps ascent_mpi mpi)
+#    set(ultroids_par_deps ascent_mpi mpi)
 #    if(OPENMP_FOUND)
-#           list(APPEND blow_par_deps openmp)
+#           list(APPEND ultroids_par_deps openmp)
 #    endif()
 #    
 #    blt_add_executable(
-#        NAME        blow_par
-#        SOURCES     ${blow_sources}
-#        DEPENDS_ON  ${blow_par_deps}
+#        NAME        ultroids_par
+#        SOURCES     ${ultroids_sources}
+#        DEPENDS_ON  ${ultroids_par_deps}
 #        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #
-#    blt_add_target_compile_flags(TO blow_par FLAGS "-DPARALLEL  ${blow_openmp_flags}")
+#    blt_add_target_compile_flags(TO ultroids_par FLAGS "-DPARALLEL  ${ultroids_openmp_flags}")
 #
-#    # install target for mpi blow example
-#    install(TARGETS blow_par
+#    # install target for mpi ultroids example
+#    install(TARGETS ultroids_par
 #            EXPORT  ascent
-#            LIBRARY DESTINATION examples/synthetic/blow
-#            ARCHIVE DESTINATION examples/synthetic/blow
-#            RUNTIME DESTINATION examples/synthetic/blow
+#            LIBRARY DESTINATION examples/synthetic/ultroids
+#            ARCHIVE DESTINATION examples/synthetic/ultroids
+#            RUNTIME DESTINATION examples/synthetic/ultroids
 #    )
 #
 #
