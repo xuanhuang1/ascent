@@ -73,6 +73,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
+#include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
@@ -2249,6 +2250,10 @@ CreatePlot::execute()
     else if(type == "mesh")
     {
       renderer = new vtkh::MeshRenderer();
+    }
+    else if(type == "point")
+    {
+      renderer = new vtkh::PointRenderer();
     }
     else
     {

@@ -11,7 +11,7 @@
 # 
 # For details, see: http://ascent.readthedocs.io/.
 # 
-# Please also read alpine/LICENSE
+# Please also read ascent/LICENSE
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,18 +44,70 @@
 
 ###############################################################################
 #
-# file: src/examples/CMakeLists.txt
+# Blow CMake Build for Ascent
 #
 ###############################################################################
 
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
-add_subdirectory(synthetic/blow)
+set(blow_sources
+    blow.cpp
+    )
 
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python tutorial
-        DESTINATION examples)
+set(blow_header
+    )
+
+
+if(ENABLE_FOUND)
+  set(blow_openmp_flags "-DBLOW_USE_OPENMP")
+else()
+   set(blow_openmp_flags "")
+endif()
+
+blt_add_executable(
+    NAME        blow_ser
+    SOURCES     ${blow_sources}
+    DEPENDS_ON  ascent
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+blt_add_target_compile_flags(TO blow_ser FLAGS "${blow_openmp_flags}")
+
+# install target for blow example
+install(TARGETS blow_ser
+        EXPORT  ascent
+        LIBRARY DESTINATION examples/synthetic/blow
+        ARCHIVE DESTINATION examples/synthetic/blow
+        RUNTIME DESTINATION examples/synthetic/blow
+)
+
+install(FILES ASCENT_README.md DESTINATION examples/synthetic/blow)
+
+#if(MPI_FOUND)
+#    
+#    set(blow_par_deps ascent_mpi mpi)
+#    if(OPENMP_FOUND)
+#           list(APPEND blow_par_deps openmp)
+#    endif()
+#    
+#    blt_add_executable(
+#        NAME        blow_par
+#        SOURCES     ${blow_sources}
+#        DEPENDS_ON  ${blow_par_deps}
+#        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+#
+#    blt_add_target_compile_flags(TO blow_par FLAGS "-DPARALLEL  ${blow_openmp_flags}")
+#
+#    # install target for mpi blow example
+#    install(TARGETS blow_par
+#            EXPORT  ascent
+#            LIBRARY DESTINATION examples/synthetic/blow
+#            ARCHIVE DESTINATION examples/synthetic/blow
+#            RUNTIME DESTINATION examples/synthetic/blow
+#    )
+#
+#
+#endif()
+
+
+
+
 
 

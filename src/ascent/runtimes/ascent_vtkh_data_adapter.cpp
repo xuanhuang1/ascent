@@ -352,6 +352,12 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
         indices = 8;
         dimensionality = 3; 
     }
+    else if(shape_type == "point")
+    {
+        shape_id = 1;
+        indices = 1;
+        dimensionality = 1; 
+    }
     // TODO: Not supported in blueprint yet ... 
     // else if(shape_type == "wedge")
     // {
