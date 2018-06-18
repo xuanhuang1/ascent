@@ -540,7 +540,7 @@ int main(int argc, char** argv)
   Particles particles;
   particles.resize(num_particles);
 
-  double max_vel = 1.0;
+  double max_vel = 0.1;
   particles.init(div, max_vel); 
   particles.print();
 
@@ -587,6 +587,35 @@ int main(int argc, char** argv)
   reset_action["action"] = "reset";
   for(int t = 0; t < options.m_time_steps; ++t)
   {
+     // update particle locations
+     for(int i = 0; i < particles.m_pos_x.size(); ++i)
+     {
+        double pos[3];
+        double dir[3];
+        double vel;
+        pos[0] = particles.m_pos_x[i];
+        pos[1] = particles.m_pos_y[i];
+        pos[2] = particles.m_pos_z[i];
+
+        dir[0] = particles.m_dir_x[i];
+        dir[1] = particles.m_dir_y[i];
+        dir[2] = particles.m_dir_z[i];
+
+        vel = particles.m_velocity[i];
+
+        pos[0] = pos[0] + dir[0] * vel * options.m_time_delta;
+        pos[1] = pos[1] + dir[1] * vel * options.m_time_delta;
+        pos[2] = pos[2] + dir[2] * vel * options.m_time_delta;
+
+        particles.m_pos_x[i] = pos[0];
+        particles.m_pos_y[i] = pos[1];
+        particles.m_pos_z[i] = pos[2];
+
+        particles.m_dir_x[i] = dir[0];
+        particles.m_dir_y[i] = dir[1];
+        particles.m_dir_z[i] = dir[2];
+     }
+
      ascent.publish(mesh_data);
      ascent.execute(actions);
      ascent.execute(reset);
