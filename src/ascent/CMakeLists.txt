@@ -86,6 +86,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
+    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
     # utils
     utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
@@ -108,6 +109,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
+    runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     # utils
     utils/ascent_logging.hpp
     utils/ascent_file_system.hpp

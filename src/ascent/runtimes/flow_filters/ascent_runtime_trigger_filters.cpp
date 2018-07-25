@@ -45,35 +45,34 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_trigger_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#include "ascent_runtime_trigger_filters.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#include <ascent_runtime_trigger_filters.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-#endif
-
+// mpi
 #ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
+#include <mpi.h>
 #endif
 
-
+using namespace conduit;
+using namespace std;
 
 using namespace flow;
 
@@ -95,66 +94,66 @@ namespace runtime
 namespace filters
 {
 
-
+;
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+EntropyTrigger::EntropyTrigger()
+:Filter()
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
-    Workspace::register_filter_type<EntropyTrigger>();
-    
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
-
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
-
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
-    
-    Workspace::register_filter_type<DefaultScene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#if defined(ASCENT_MPI_ENABLED)
-    Workspace::register_filter_type<HolaMPIExtract>();
-
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-
-#endif
-
+// empty
 }
 
+//-----------------------------------------------------------------------------
+EntropyTrigger::~EntropyTrigger()
+{
+// empty
+}
 
+//-----------------------------------------------------------------------------
+void 
+EntropyTrigger::declare_interface(Node &i)
+{
+    i["type_name"]   = "entropy_trigger";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+void 
+EntropyTrigger::execute()
+{
+  if(!input(0).check_type<Node>())
+  {
+      ASCENT_ERROR("entropy trigger input must be a mesh blueprint "<<
+                   "conforming conduit::Node");
+  }
+  
+  conduit::Node *dataset = input<Node>(0);
+  //dataset->print();
+ 
+  std::vector<std::string> field_names = (*dataset)["fields"].child_names(); 
+  for(int f = 0; f < field_names.size(); ++f)
+  {
+    std::cout<<"Data set has field "<<field_names[f]<<"\n";
+  }
+
+  const Node &field = (*dataset)["fields/density"];
+  //field.print();
+  // TODO generalize to any data type
+  // this is not always a double
+  const float64 *vals = field["values"].as_float64_ptr();
+
+  const int32 field_size = field["values"].dtype().number_of_elements();
+  std::cout<<"number of elements "<<field_size<<"\n";
+  
+  // do stuff
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -168,4 +167,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 

@@ -432,6 +432,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     filter_name = "hola_mpi";
   }
+  else if(extract["type"].as_string() == "entropy")
+  {
+    filter_name = "entropy_trigger";
+  }
   else if(extract["type"].as_string() == "python")
   {
     filter_name = "python_script";

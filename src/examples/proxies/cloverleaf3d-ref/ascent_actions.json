@@ -19,6 +19,20 @@
       }
     }
   },
+  {
+    "action": "add_extracts",
+    "extracts": 
+    {
+      "e1": 
+      {
+        "type": "entropy",
+        "params": 
+        {
+          "field": "energy"
+        }
+      }
+    }
+  },
   
   {
     "action": "execute"
