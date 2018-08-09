@@ -45,17 +45,24 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_trigger_filters.hpp
+/// file: ascent_runtime_entropy_trigger.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_TRIGGER_FILTERS
-#define ASCENT_RUNTIME_TRIGGER_FILTERS
+#include "ascent_runtime_entropy_trigger.hpp"
 
-#include <ascent.hpp>
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
 
-#include <flow_filter.hpp>
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 
+using namespace conduit;
+using namespace std;
+
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -75,23 +82,59 @@ namespace runtime
 namespace filters
 {
 
+;
 //-----------------------------------------------------------------------------
-///
-/// Trigger Filters
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class EntropyTrigger : public ::flow::Filter
+EntropyTrigger::EntropyTrigger()
+: FieldTriggerFilter()
 {
-public:
-    EntropyTrigger();
-    virtual ~EntropyTrigger();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
+// empty
+}
 
+//-----------------------------------------------------------------------------
+EntropyTrigger::~EntropyTrigger()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+bool   
+EntropyTrigger::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    bool res = FieldTriggerFilter::verify_params(params, info);
+    //bool res = true;//FieldTriggerFilter::verify_params(params, info);
+    if(! params.has_child("threshold") || 
+       ! params["threshold"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required string parameter 'threshold'";
+        res = false;
+    }
+    std::cout<<"Verified entropy "<<res<<"\n";
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+
+std::string  
+EntropyTrigger::get_type_name()
+{
+  return "entropy_trigger";
+}
+
+//-----------------------------------------------------------------------------
+bool
+EntropyTrigger::trigger(const conduit::Node &field)
+{
+  //field.print();
+  // TODO generalize to any data type
+  // this is not always a double
+  const float64 *vals = field["values"].as_float64_ptr();
+
+  const int32 field_size = field["values"].dtype().number_of_elements();
+  std::cout<<"number of elements "<<field_size<<"\n";
+  
+  return true;
+}
 
 //-----------------------------------------------------------------------------
 };
@@ -116,7 +159,4 @@ public:
 
 
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+

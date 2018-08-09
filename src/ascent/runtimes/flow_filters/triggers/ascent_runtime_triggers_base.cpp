@@ -45,35 +45,34 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_triggers_base.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#include "ascent_runtime_triggers_base.hpp"
 
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
+
+// conduit includes
+#include <conduit.hpp>
+#include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#include <triggers/ascent_runtime_entropy_trigger.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-#endif
-
+// mpi
 #ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
+#include <mpi.h>
 #endif
 
-
+using namespace conduit;
+using namespace std;
 
 using namespace flow;
 
@@ -95,66 +94,159 @@ namespace runtime
 namespace filters
 {
 
-
+;
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+TriggerFilter::TriggerFilter()
+:Filter()
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
-    Workspace::register_filter_type<EntropyTrigger>();
+// empty
+}
+
+//-----------------------------------------------------------------------------
+TriggerFilter::~TriggerFilter()
+{
+// empty
+}
+
+bool   
+TriggerFilter::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    bool res = true;
+    if(! params.has_child("actions"))
+    {
+        info["errors"].append() = "Missing required conduit::Node parameter 'actions'";
+        res = false;
+    }
+    return res;
+}
+//-----------------------------------------------------------------------------
+void 
+TriggerFilter::declare_interface(Node &i)
+{
+    i["type_name"]   = this->get_type_name();
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+void 
+TriggerFilter::execute()
+{
+  if(!input(0).check_type<conduit::Node>())
+  {
+      ASCENT_ERROR("TriggerFilter input must be a conduit blueprint data set");
+  }
+
+  const conduit::Node &data = this->get_data();
+ 
+  // triggered better be all true of all false amongst all ranks
+  bool triggered = this->trigger(data);
+
+  if(triggered)
+  {
+    //
+    // Run Ascent and execute the trigger actions
+    //
     
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
+    conduit::Node *in = input<conduit::Node>(0);
+    conduit::Node actions = params()["actions"];
+    Ascent ascent;
 
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
-
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
-    
-    Workspace::register_filter_type<DefaultScene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#if defined(ASCENT_MPI_ENABLED)
-    Workspace::register_filter_type<HolaMPIExtract>();
-
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-
-#endif
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(*in);
+    ascent.execute(actions);
+    ascent.close();
+  }
 
 }
 
+//-----------------------------------------------------------------------------
+FieldTriggerFilter::FieldTriggerFilter()
+: TriggerFilter()
+{
 
+}
+
+//-----------------------------------------------------------------------------
+FieldTriggerFilter::~FieldTriggerFilter()
+{
+
+}
+    
+//-----------------------------------------------------------------------------
+bool   
+FieldTriggerFilter::verify_params(const conduit::Node &params,
+                                  conduit::Node &info)
+{
+    bool res = TriggerFilter::verify_params(params, info);
+    if(! params.has_child("field") || 
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+    std::cout<<"Verified field\n";
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+const conduit::Node &
+FieldTriggerFilter::get_data()
+{
+  ASCENT_INFO("Field Trigger!");
+
+  std::string field_name = params()["field"].as_string();
+  conduit::Node *data = input<conduit::Node>(0);
+  //data->print(); 
+  std::string field_path = "fields/" + field_name; 
+  // TODO: assume multi-dom
+  if(!data->has_path(field_path))
+  {
+    (*data)[field_path].print(); 
+    ASCENT_ERROR("Field trigger: data set does not contain field '"<<field_name<<"'"); 
+  }
+  
+  const conduit::Node &field = (*data)["fields/"+field_name];
+  
+  return field;
+}
+    
+
+
+//-----------------------------------------------------------------------------
+//void 
+//FieldTrigger::get_data()
+//{
+//  conduit::Node *dataset = input<Node>(0);
+//  //dataset->print();
+// 
+//  std::vector<std::string> field_names = (*dataset)["fields"].child_names(); 
+//  for(int f = 0; f < field_names.size(); ++f)
+//  {
+//    std::cout<<"Data set has field "<<field_names[f]<<"\n";
+//  }
+//
+//  const Node &field = (*dataset)["fields/density"];
+//  //field.print();
+//  // TODO generalize to any data type
+//  // this is not always a double
+//  const float64 *vals = field["values"].as_float64_ptr();
+//
+//  const int32 field_size = field["values"].dtype().number_of_elements();
+//  std::cout<<"number of elements "<<field_size<<"\n";
+//  
+//  // do stuff
+//}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -168,4 +260,8 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+
+
 

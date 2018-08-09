@@ -45,36 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_trigger_filters.cpp
+/// file: ascent_runtime_trigger_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_trigger_filters.hpp"
+#ifndef ASCENT_RUNTIME_ENTROPY_TRIGGER_HPP
+#define ASCENT_RUNTIME_ENTROPY_TRIGGER_HPP
 
-//-----------------------------------------------------------------------------
-// thirdparty includes
-//-----------------------------------------------------------------------------
+#include <ascent.hpp>
 
-// conduit includes
-#include <conduit.hpp>
-#include <conduit_blueprint.hpp>
+#include "ascent_runtime_triggers_base.hpp" 
 
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include <flow_graph.hpp>
-#include <flow_workspace.hpp>
-
-// mpi
-#ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
-#endif
-
-using namespace conduit;
-using namespace std;
-
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -94,59 +75,27 @@ namespace runtime
 namespace filters
 {
 
-;
 //-----------------------------------------------------------------------------
-EntropyTrigger::EntropyTrigger()
-:Filter()
-{
-// empty
-}
+///
+/// Trigger Filters
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-EntropyTrigger::~EntropyTrigger()
+class EntropyTrigger : public FieldTriggerFilter 
 {
-// empty
-}
+public:
+    EntropyTrigger();
+    virtual ~EntropyTrigger();
+    
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
 
-//-----------------------------------------------------------------------------
-void 
-EntropyTrigger::declare_interface(Node &i)
-{
-    i["type_name"]   = "entropy_trigger";
-    i["port_names"].append() = "in";
-    i["output_port"] = "false";
-}
+    virtual bool trigger(const conduit::Node &field);
 
-//-----------------------------------------------------------------------------
-void 
-EntropyTrigger::execute()
-{
-  if(!input(0).check_type<Node>())
-  {
-      ASCENT_ERROR("entropy trigger input must be a mesh blueprint "<<
-                   "conforming conduit::Node");
-  }
-  
-  conduit::Node *dataset = input<Node>(0);
-  //dataset->print();
- 
-  std::vector<std::string> field_names = (*dataset)["fields"].child_names(); 
-  for(int f = 0; f < field_names.size(); ++f)
-  {
-    std::cout<<"Data set has field "<<field_names[f]<<"\n";
-  }
+    virtual std::string  get_type_name(); 
+};
 
-  const Node &field = (*dataset)["fields/density"];
-  //field.print();
-  // TODO generalize to any data type
-  // this is not always a double
-  const float64 *vals = field["values"].as_float64_ptr();
-
-  const int32 field_size = field["values"].dtype().number_of_elements();
-  std::cout<<"number of elements "<<field_size<<"\n";
-  
-  // do stuff
-}
 
 //-----------------------------------------------------------------------------
 };
@@ -171,4 +120,7 @@ EntropyTrigger::execute()
 
 
 
-
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------

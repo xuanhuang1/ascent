@@ -45,37 +45,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_filters.cpp
+/// file: ascent_runtime_trigger_base.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_runtime_filters.hpp>
+#ifndef ASCENT_RUNTIME_TRIGGER_BASE
+#define ASCENT_RUNTIME_TRIGGER_BASE
 
+#include <ascent.hpp>
 
-//-----------------------------------------------------------------------------
-// ascent includes
-//-----------------------------------------------------------------------------
-#include <ascent_logging.hpp>
-#include <flow_workspace.hpp>
+#include <flow_filter.hpp>
 
-#include <ascent_runtime_relay_filters.hpp>
-#include <ascent_runtime_blueprint_filters.hpp>
-#include <triggers/ascent_runtime_entropy_trigger.hpp>
-
-#if defined(ASCENT_VTKM_ENABLED)
-    #include <ascent_runtime_vtkh_filters.hpp>
-#endif
-
-#ifdef ASCENT_MPI_ENABLED
-    #include <ascent_runtime_hola_filters.hpp>
-#if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
-#endif
-#endif
-
-
-
-using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -95,59 +75,46 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
+///
+/// Trigger Filters
+///
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// init all built in filters
-//-----------------------------------------------------------------------------
-void
-register_builtin()
+class TriggerFilter : public ::flow::Filter
 {
-    Workspace::register_filter_type<BlueprintVerify>(); 
-    Workspace::register_filter_type<RelayIOSave>();
-    Workspace::register_filter_type<RelayIOLoad>();
-    Workspace::register_filter_type<EntropyTrigger>();
+public:
+    TriggerFilter();
+    virtual ~TriggerFilter();
     
-#if defined(ASCENT_VTKM_ENABLED)
-    Workspace::register_filter_type<DefaultRender>();
-    Workspace::register_filter_type<EnsureVTKH>();
-    Workspace::register_filter_type<EnsureVTKM>();
-    Workspace::register_filter_type<EnsureBlueprint>();
+    bool verify_params(const conduit::Node &params,
+                       conduit::Node &info);
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+protected:
+    virtual bool trigger(const conduit::Node &) = 0;
+    // GetTypeName: unique typename that is used to create the filter the runtime
+    virtual std::string  get_type_name() = 0; 
+    // GetData: generic method for getting the underlying data from a derived
+    //          class. Examples are getting a field or topology from the data set.
+    virtual const conduit::Node &get_data() = 0;
+};
 
-    Workspace::register_filter_type<VTKHBounds>();
-    Workspace::register_filter_type<VTKHUnionBounds>();
 
-    Workspace::register_filter_type<VTKHDomainIds>();
-    Workspace::register_filter_type<VTKHUnionDomainIds>();
+class FieldTriggerFilter : public TriggerFilter 
+{
+public:
+    FieldTriggerFilter();
+    virtual ~FieldTriggerFilter();
     
-    Workspace::register_filter_type<DefaultScene>();
-
-
-    Workspace::register_filter_type<VTKHClip>();
-    Workspace::register_filter_type<VTKHClipWithField>();
-    Workspace::register_filter_type<VTKHIsoVolume>();
-    Workspace::register_filter_type<VTKHMarchingCubes>();
-    Workspace::register_filter_type<VTKHThreshold>();
-    Workspace::register_filter_type<VTKHSlice>();
-    Workspace::register_filter_type<VTKH3Slice>();
-    Workspace::register_filter_type<VTKHNoOp>();
-
-    Workspace::register_filter_type<AddPlot>();
-    Workspace::register_filter_type<CreatePlot>();
-    Workspace::register_filter_type<CreateScene>();
-    Workspace::register_filter_type<ExecScene>();
-#endif
-
-#if defined(ASCENT_MPI_ENABLED)
-    Workspace::register_filter_type<HolaMPIExtract>();
-
-#if defined(ASCENT_ADIOS_ENABLED)
-    Workspace::register_filter_type<ADIOS>();
-#endif
-
-#endif
-
-}
-
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+protected:
+   // virtual bool trigger(const conduit::Node &field) = 0;
+    virtual const conduit::Node &get_data();
+    
+};
 
 
 //-----------------------------------------------------------------------------
@@ -155,6 +122,7 @@ register_builtin()
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -169,3 +137,10 @@ register_builtin()
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+
+
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
