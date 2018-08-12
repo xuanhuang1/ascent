@@ -73,6 +73,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
+               t_ascent_mpi_triggers
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually  

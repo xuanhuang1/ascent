@@ -61,6 +61,7 @@
 #include <ascent_runtime_relay_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <triggers/ascent_runtime_entropy_trigger.hpp>
+#include <triggers/ascent_runtime_performance_triggers.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -103,9 +104,11 @@ void
 register_builtin()
 {
     Workspace::register_filter_type<BlueprintVerify>(); 
+    Workspace::register_filter_type<DomainMesh>(); 
     Workspace::register_filter_type<RelayIOSave>();
     Workspace::register_filter_type<RelayIOLoad>();
     Workspace::register_filter_type<EntropyTrigger>();
+    Workspace::register_filter_type<MemoryTrigger>();
     
 #if defined(ASCENT_VTKM_ENABLED)
     Workspace::register_filter_type<DefaultRender>();

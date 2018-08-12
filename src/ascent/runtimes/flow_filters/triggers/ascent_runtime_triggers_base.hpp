@@ -111,8 +111,17 @@ public:
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
 protected:
-   // virtual bool trigger(const conduit::Node &field) = 0;
     virtual const conduit::Node &get_data();
+    
+};
+
+class PerformanceTriggerFilter : public FieldTriggerFilter 
+{
+public:
+    PerformanceTriggerFilter();
+    virtual ~PerformanceTriggerFilter();
+    
+    virtual void   execute() override;
     
 };
 

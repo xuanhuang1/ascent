@@ -45,16 +45,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_blueprint_filters.hpp
+/// file: ascent_runtime_trigger_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_BLUEPRINT_FILTERS
-#define ASCENT_RUNTIME_BLUEPRINT_FILTERS
+#ifndef ASCENT_RUNTIME_TRIGGERS_HPP
+#define ASCENT_RUNTIME_TRIGGERS_HPP
 
 #include <ascent.hpp>
 
-#include <flow_filter.hpp>
+#include "ascent_runtime_triggers_base.hpp" 
 
 
 //-----------------------------------------------------------------------------
@@ -77,45 +77,53 @@ namespace filters
 
 //-----------------------------------------------------------------------------
 ///
-/// Filters Related to Blueprint
+/// Trigger Filters
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class BlueprintVerify : public ::flow::Filter
+class EntropyTrigger : public FieldTriggerFilter 
 {
 public:
-    BlueprintVerify();
-   ~BlueprintVerify();
+    EntropyTrigger();
+    virtual ~EntropyTrigger();
     
-    virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
-    virtual void   execute();
+
+    virtual bool trigger(const conduit::Node &field);
+
+    virtual std::string  get_type_name(); 
+};
+
+
+class MemoryTrigger : public PerformanceTriggerFilter 
+{
+public:
+    MemoryTrigger();
+    virtual ~MemoryTrigger();
+    
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+
+    virtual bool trigger(const conduit::Node &field);
+
+    virtual std::string  get_type_name(); 
 };
 
 //-----------------------------------------------------------------------------
-class DomainMesh : public ::flow::Filter
-{
-public:
-    DomainMesh();
-   ~DomainMesh();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
-
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };

@@ -214,8 +214,56 @@ FieldTriggerFilter::get_data()
   return field;
 }
     
+//-----------------------------------------------------------------------------
+PerformanceTriggerFilter::PerformanceTriggerFilter()
+: FieldTriggerFilter()
+{
 
+}
 
+//-----------------------------------------------------------------------------
+PerformanceTriggerFilter::~PerformanceTriggerFilter()
+{
+
+}
+    
+//-----------------------------------------------------------------------------
+void 
+PerformanceTriggerFilter::execute()
+{
+  if(!input(0).check_type<conduit::Node>())
+  {
+      ASCENT_ERROR("TriggerFilter input must be a conduit blueprint data set");
+  }
+
+  const conduit::Node &data = this->get_data();
+ 
+  // triggered better be all true of all false amongst all ranks
+  bool triggered = this->trigger(data);
+
+  if(triggered)
+  {
+    //
+    // Run Ascent and execute the trigger actions
+    //
+    std::cout<<"Triggerd!!!\n";  
+    conduit::Node *in = input<conduit::Node>(0);
+    in->print();
+    conduit::Node actions = params()["actions"];
+    Ascent ascent;
+
+    Node ascent_opts;
+#ifdef ASCENT_MPI_ENABLED
+    ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
+#endif
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(*in);
+    ascent.execute(actions);
+    ascent.close();
+  }
+
+}
 //-----------------------------------------------------------------------------
 //void 
 //FieldTrigger::get_data()

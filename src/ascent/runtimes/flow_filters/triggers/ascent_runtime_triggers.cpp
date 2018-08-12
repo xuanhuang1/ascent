@@ -45,17 +45,24 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_blueprint_filters.hpp
+/// file: ascent_runtime_entropy_trigger.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_BLUEPRINT_FILTERS
-#define ASCENT_RUNTIME_BLUEPRINT_FILTERS
+#include "ascent_runtime_triggers.hpp"
 
-#include <ascent.hpp>
+//-----------------------------------------------------------------------------
+// thirdparty includes
+//-----------------------------------------------------------------------------
 
-#include <flow_filter.hpp>
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 
+using namespace conduit;
+using namespace std;
+
+using namespace flow;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -75,47 +82,125 @@ namespace runtime
 namespace filters
 {
 
+;
 //-----------------------------------------------------------------------------
-///
-/// Filters Related to Blueprint
-///
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-class BlueprintVerify : public ::flow::Filter
+EntropyTrigger::EntropyTrigger()
+: FieldTriggerFilter()
 {
-public:
-    BlueprintVerify();
-   ~BlueprintVerify();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
+// empty
+}
 
 //-----------------------------------------------------------------------------
-class DomainMesh : public ::flow::Filter
+EntropyTrigger::~EntropyTrigger()
 {
-public:
-    DomainMesh();
-   ~DomainMesh();
-    
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-};
+// empty
+}
 
+//-----------------------------------------------------------------------------
+bool   
+EntropyTrigger::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    bool res = FieldTriggerFilter::verify_params(params, info);
+    //bool res = true;//FieldTriggerFilter::verify_params(params, info);
+    if(! params.has_child("threshold") || 
+       ! params["threshold"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required string parameter 'threshold'";
+        res = false;
+    }
+    std::cout<<"Verified entropy "<<res<<"\n";
+    return res;
+}
 
+//-----------------------------------------------------------------------------
+
+std::string  
+EntropyTrigger::get_type_name()
+{
+  return "entropy_trigger";
+}
+
+//-----------------------------------------------------------------------------
+bool
+EntropyTrigger::trigger(const conduit::Node &field)
+{
+  //field.print();
+  // TODO generalize to any data type
+  // this is not always a double
+  const float64 *vals = field["values"].as_float64_ptr();
+
+  const int32 field_size = field["values"].dtype().number_of_elements();
+  std::cout<<"number of elements "<<field_size<<"\n";
+  
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+MemoryTrigger::MemoryTrigger()
+: PerformanceTriggerFilter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+MemoryTrigger::~MemoryTrigger()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+bool   
+MemoryTrigger::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    bool res = PerformanceTriggerFilter::verify_params(params, info);
+    //bool res = true;//FieldTriggerFilter::verify_params(params, info);
+    //if(! params.has_child("threshold") || 
+    //   ! params["threshold"].dtype().is_number() )
+    //{
+    //    info["errors"].append() = "Missing required string parameter 'threshold'";
+    //    res = false;
+    //}
+    //std::cout<<"Verified entropy "<<res<<"\n";
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+
+std::string  
+MemoryTrigger::get_type_name()
+{
+  return "memory_trigger";
+}
+
+//-----------------------------------------------------------------------------
+bool
+MemoryTrigger::trigger(const conduit::Node &field)
+{
+  //field.print();
+  // TODO generalize to any data type
+  // this is not always a double
+  //const float64 *vals = field["values"].as_float64_ptr();
+
+  //const int32 field_size = field["values"].dtype().number_of_elements();
+  //std::cout<<"number of elements "<<field_size<<"\n";
+  
+  return true;
+}
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -126,7 +211,4 @@ public:
 
 
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
+

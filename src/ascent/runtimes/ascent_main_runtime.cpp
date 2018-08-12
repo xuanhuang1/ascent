@@ -70,6 +70,8 @@
 
 #include <flow.hpp>
 #include <ascent_runtime_filters.hpp>
+#include "flow_filters/triggers/ascent_runtime_triggers_base.hpp"
+
 
 #include <vtkh/vtkh.hpp>
 
@@ -436,6 +438,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     filter_name = "entropy_trigger";
   }
+  else if(extract["type"].as_string() == "memory")
+  {
+    filter_name = "memory_trigger";
+  }
   else if(extract["type"].as_string() == "python")
   {
     filter_name = "python_script";
@@ -511,10 +517,19 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                        ensure_name,
                        empty_params);
 
-  w.graph().add_filter(filter_name,
-                       extract_name,
-                       params);
-
+  flow::Filter *filter = w.graph().add_filter(filter_name,
+                                              extract_name,
+                                              params);
+  bool needs_domain_mesh = false;
+  std::string domain_mesh_name = "domain_mesh_" + extract_name;
+  if(dynamic_cast<runtime::filters::PerformanceTriggerFilter*>(filter))
+  {
+    std::cout<<"*********PERF**********\n";
+    needs_domain_mesh = true;
+    w.graph().add_filter("domain_mesh",
+                         domain_mesh_name,
+                         empty_params);
+  }
   //
   // We can't connect the extract to the pipeline since
   // we want to allow users to specify actions any any order 
@@ -530,8 +545,17 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     extract_source = "source";
   }
   
-  m_connections[ensure_name] = extract_source;
-  m_connections[extract_name] = ensure_name;
+  if(needs_domain_mesh)
+  {
+    m_connections[ensure_name] = extract_source;
+    m_connections[domain_mesh_name] = ensure_name;
+    m_connections[extract_name] = domain_mesh_name;
+  }
+  else
+  {
+    m_connections[ensure_name] = extract_source;
+    m_connections[extract_name] = ensure_name;
+  }
 
 }
 //-----------------------------------------------------------------------------
