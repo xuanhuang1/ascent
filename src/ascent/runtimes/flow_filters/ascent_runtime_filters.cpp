@@ -60,8 +60,7 @@
 
 #include <ascent_runtime_relay_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
-#include <triggers/ascent_runtime_entropy_trigger.hpp>
-#include <triggers/ascent_runtime_performance_triggers.hpp>
+#include <triggers/ascent_runtime_triggers.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
