@@ -154,6 +154,10 @@ TriggerFilter::execute()
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+#ifdef ASCENT_MPI_ENABLED
+    ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
+#endif
+    ascent_opts["actions_file"] = "";
     ascent.open(ascent_opts);
     ascent.publish(*in);
     ascent.execute(actions);
