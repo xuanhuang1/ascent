@@ -107,7 +107,7 @@ register_builtin()
     Workspace::register_filter_type<RelayIOSave>();
     Workspace::register_filter_type<RelayIOLoad>();
     Workspace::register_filter_type<EntropyTrigger>();
-    Workspace::register_filter_type<MemoryTrigger>();
+    Workspace::register_filter_type<ThresholdPerformanceTrigger>();
     
 #if defined(ASCENT_VTKM_ENABLED)
     Workspace::register_filter_type<DefaultRender>();

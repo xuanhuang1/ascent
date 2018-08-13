@@ -97,11 +97,11 @@ public:
 };
 
 
-class MemoryTrigger : public PerformanceTriggerFilter 
+class ThresholdPerformanceTrigger : public PerformanceTriggerFilter 
 {
 public:
-    MemoryTrigger();
-    virtual ~MemoryTrigger();
+    ThresholdPerformanceTrigger();
+    virtual ~ThresholdPerformanceTrigger();
     
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);

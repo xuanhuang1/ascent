@@ -438,9 +438,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     filter_name = "entropy_trigger";
   }
-  else if(extract["type"].as_string() == "memory")
+  else if(extract["type"].as_string() == "performance_threshold")
   {
-    filter_name = "memory_trigger";
+    filter_name = "threshold_performance_trigger";
   }
   else if(extract["type"].as_string() == "python")
   {

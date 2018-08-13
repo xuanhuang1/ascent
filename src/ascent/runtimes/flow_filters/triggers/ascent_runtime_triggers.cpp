@@ -137,31 +137,30 @@ EntropyTrigger::trigger(const conduit::Node &field)
 }
 
 //-----------------------------------------------------------------------------
-MemoryTrigger::MemoryTrigger()
+ThresholdPerformanceTrigger::ThresholdPerformanceTrigger()
 : PerformanceTriggerFilter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-MemoryTrigger::~MemoryTrigger()
+ThresholdPerformanceTrigger::~ThresholdPerformanceTrigger()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 bool   
-MemoryTrigger::verify_params(const conduit::Node &params,
+ThresholdPerformanceTrigger::verify_params(const conduit::Node &params,
                               conduit::Node &info)
 {
     bool res = PerformanceTriggerFilter::verify_params(params, info);
-    //bool res = true;//FieldTriggerFilter::verify_params(params, info);
-    //if(! params.has_child("threshold") || 
-    //   ! params["threshold"].dtype().is_number() )
-    //{
-    //    info["errors"].append() = "Missing required string parameter 'threshold'";
-    //    res = false;
-    //}
+    if(! params.has_child("threshold") || 
+       ! params["threshold"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required numerical parameter 'threshold'";
+        res = false;
+    }
     //std::cout<<"Verified entropy "<<res<<"\n";
     return res;
 }
@@ -169,20 +168,21 @@ MemoryTrigger::verify_params(const conduit::Node &params,
 //-----------------------------------------------------------------------------
 
 std::string  
-MemoryTrigger::get_type_name()
+ThresholdPerformanceTrigger::get_type_name()
 {
-  return "memory_trigger";
+  return "threshold_performance_trigger";
 }
 
 //-----------------------------------------------------------------------------
 bool
-MemoryTrigger::trigger(const conduit::Node &field)
+ThresholdPerformanceTrigger::trigger(const conduit::Node &field)
 {
   //field.print();
   // TODO generalize to any data type
   // this is not always a double
-  //const float64 *vals = field["values"].as_float64_ptr();
-
+  float64 threshold = params()["threshold"].to_float64();
+  const float64 vals = field.to_float64();
+  
   //const int32 field_size = field["values"].dtype().number_of_elements();
   //std::cout<<"number of elements "<<field_size<<"\n";
   

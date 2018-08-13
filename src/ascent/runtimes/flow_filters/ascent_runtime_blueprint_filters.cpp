@@ -421,6 +421,7 @@ DomainMesh::execute()
 
     if(!n_input->has_path("state"))
     {
+      n_input->print();
       ASCENT_ERROR("Can't create Domain Mesh without state fields");
     }
     add_state_fields((*n_input)["state"], d_mesh);

@@ -115,16 +115,52 @@ protected:
     
 };
 
+class MeshTriggerFilter : public TriggerFilter 
+{
+public:
+    MeshTriggerFilter();
+    virtual ~MeshTriggerFilter();
+    
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+protected:
+    virtual const conduit::Node &get_data();
+    
+};
+
 class PerformanceTriggerFilter : public FieldTriggerFilter 
 {
 public:
     PerformanceTriggerFilter();
     virtual ~PerformanceTriggerFilter();
-    
-    virtual void   execute() override;
-    
 };
 
+struct StateContainer
+{
+  std::map<std::string, conduit::Node*> m_states;
+  ~StateContainer()
+  {
+    std::cout<<"DELETING STATES\n";
+    for(auto it = m_states.begin(); it != m_states.end(); ++it)
+    {
+      delete m_states[it->first];
+    }
+  }
+};
+
+class State
+{
+public:
+  // sets the state of a given key and assumes ownership of the pointer.
+  // if a state already exists, it is deleted and replaced by the new state.
+  void set_state(const std::string &key, conduit::Node *state);
+  // retrieves the state of the given key. If no state exists, nullptr is returned
+  conduit::Node* get_state(const std::string &key);
+  // returns true of the state exists 
+  bool has_state(const std::string &key);
+private:
+  static StateContainer m_state_container;
+};
 
 //-----------------------------------------------------------------------------
 };

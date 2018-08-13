@@ -94,7 +94,6 @@ namespace runtime
 namespace filters
 {
 
-;
 //-----------------------------------------------------------------------------
 TriggerFilter::TriggerFilter()
 :Filter()
@@ -213,6 +212,63 @@ FieldTriggerFilter::get_data()
   
   return field;
 }
+//-----------------------------------------------------------------------------
+MeshTriggerFilter::MeshTriggerFilter()
+: TriggerFilter()
+{
+
+}
+
+//-----------------------------------------------------------------------------
+MeshTriggerFilter::~MeshTriggerFilter()
+{
+
+}
+    
+//-----------------------------------------------------------------------------
+bool   
+MeshTriggerFilter::verify_params(const conduit::Node &params,
+                                  conduit::Node &info)
+{
+    bool res = TriggerFilter::verify_params(params, info);
+    // check for optional topology param
+    if( params.has_child("topology") && 
+       ! params["topology"].dtype().is_string() )
+    {
+        info["errors"].append() = "Optional parameter 'field' must be a string";
+        res = false;
+    }
+    std::cout<<"Verified Mesh\n";
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+const conduit::Node &
+MeshTriggerFilter::get_data()
+{
+  ASCENT_INFO("Mesh Trigger!");
+
+  conduit::Node *data = input<conduit::Node>(0);
+
+  std::string topo_name;
+  if(params().has_child("topology"))
+  {
+    topo_name = params()["topology"].as_string();
+    if(!data->has_path("topologies/" + topo_name))
+    {
+      ASCENT_ERROR("Mesh trigger: requested topology '"<<topo_name<<"' does not exist"); 
+    }
+  }
+  else
+  {
+    auto names = (*data)["topologies"].child_names();   
+    topo_name = names[0];
+  }
+
+  const conduit::Node &topo = (*data)["topologies/"+topo_name];
+  
+  return topo;
+}
     
 //-----------------------------------------------------------------------------
 PerformanceTriggerFilter::PerformanceTriggerFilter()
@@ -226,69 +282,42 @@ PerformanceTriggerFilter::~PerformanceTriggerFilter()
 {
 
 }
-    
+
+//-----------------------------------------------------------------------------
+// Init state container
+StateContainer State::m_state_container;
 //-----------------------------------------------------------------------------
 void 
-PerformanceTriggerFilter::execute()
+State::set_state(const std::string &key, conduit::Node *state)
 {
-  if(!input(0).check_type<conduit::Node>())
+
+  if(has_state(key))
   {
-      ASCENT_ERROR("TriggerFilter input must be a conduit blueprint data set");
+    delete m_state_container.m_states[key];
   }
 
-  const conduit::Node &data = this->get_data();
- 
-  // triggered better be all true of all false amongst all ranks
-  bool triggered = this->trigger(data);
-
-  if(triggered)
-  {
-    //
-    // Run Ascent and execute the trigger actions
-    //
-    std::cout<<"Triggerd!!!\n";  
-    conduit::Node *in = input<conduit::Node>(0);
-    in->print();
-    conduit::Node actions = params()["actions"];
-    Ascent ascent;
-
-    Node ascent_opts;
-#ifdef ASCENT_MPI_ENABLED
-    ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
-#endif
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(*in);
-    ascent.execute(actions);
-    ascent.close();
-  }
-
+  m_state_container.m_states[key] = state;
 }
-//-----------------------------------------------------------------------------
-//void 
-//FieldTrigger::get_data()
-//{
-//  conduit::Node *dataset = input<Node>(0);
-//  //dataset->print();
-// 
-//  std::vector<std::string> field_names = (*dataset)["fields"].child_names(); 
-//  for(int f = 0; f < field_names.size(); ++f)
-//  {
-//    std::cout<<"Data set has field "<<field_names[f]<<"\n";
-//  }
-//
-//  const Node &field = (*dataset)["fields/density"];
-//  //field.print();
-//  // TODO generalize to any data type
-//  // this is not always a double
-//  const float64 *vals = field["values"].as_float64_ptr();
-//
-//  const int32 field_size = field["values"].dtype().number_of_elements();
-//  std::cout<<"number of elements "<<field_size<<"\n";
-//  
-//  // do stuff
-//}
 
+//-----------------------------------------------------------------------------
+conduit::Node* 
+State::get_state(const std::string &key)
+{
+  conduit::Node *res = nullptr;
+  if(has_state(key))
+  {
+    res = m_state_container.m_states[key];
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+bool 
+State::has_state(const std::string &key)
+{
+  auto it = m_state_container.m_states.find(key);
+  return it != m_state_container.m_states.end();
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
