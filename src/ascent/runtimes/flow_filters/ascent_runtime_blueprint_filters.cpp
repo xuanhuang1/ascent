@@ -201,7 +201,6 @@ void reduce(const float64* values, const int32 size, float64 &min_val, float64 &
     min_val = val < min_val ? val : min_val; 
     max_val = val > max_val ? val : max_val; 
   }
-  std::cout<<"Min "<<min_val<<" max "<<max_val<<"\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -372,7 +371,6 @@ void add_state_fields(const conduit::Node &state, conduit::Node *d_mesh)
       is_supported = false;
     }
     
-    std::cout<<"field "<<child_names[i]<<" is supported "<<is_supported<<"\n";
     if(is_supported)
     {
       std::string path = "fields/"+child_names[i]+"/";
@@ -405,8 +403,7 @@ DomainMesh::execute()
     // grab the first topo
     const conduit::Node &topo = (*n_input)["topologies"].child(0);
     const conduit::Node &coords = (*n_input)["coordsets/"+topo["coordset"].as_string()];
-    std::cout<<"Got topo\n"; 
-    std::cout<<coords["type"].as_string()<<"\n"; 
+
     std::string c_type = coords["type"].as_string(); 
    
     if(c_type == "explicit")

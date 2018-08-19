@@ -85,7 +85,7 @@ namespace filters
 ;
 //-----------------------------------------------------------------------------
 EntropyTrigger::EntropyTrigger()
-: FieldTriggerFilter()
+: TriggerFilter(true, false, false)
 {
 // empty
 }
@@ -101,8 +101,7 @@ bool
 EntropyTrigger::verify_params(const conduit::Node &params,
                               conduit::Node &info)
 {
-    bool res = FieldTriggerFilter::verify_params(params, info);
-    //bool res = true;//FieldTriggerFilter::verify_params(params, info);
+    bool res = TriggerFilter::verify_params(params, info);
     if(! params.has_child("threshold") || 
        ! params["threshold"].dtype().is_number() )
     {
@@ -123,11 +122,12 @@ EntropyTrigger::get_type_name()
 
 //-----------------------------------------------------------------------------
 bool
-EntropyTrigger::trigger(const conduit::Node &field)
+EntropyTrigger::trigger()
 {
   //field.print();
   // TODO generalize to any data type
   // this is not always a double
+  const conduit::Node &field = this->get_field();
   const float64 *vals = field["values"].as_float64_ptr();
 
   const int32 field_size = field["values"].dtype().number_of_elements();
@@ -137,56 +137,54 @@ EntropyTrigger::trigger(const conduit::Node &field)
 }
 
 //-----------------------------------------------------------------------------
-ThresholdPerformanceTrigger::ThresholdPerformanceTrigger()
-: PerformanceTriggerFilter()
+StateThresholdTrigger::StateThresholdTrigger()
+: TriggerFilter(false, true, false)
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-ThresholdPerformanceTrigger::~ThresholdPerformanceTrigger()
+StateThresholdTrigger::~StateThresholdTrigger()
 {
 // empty
 }
-
-//-----------------------------------------------------------------------------
-bool   
-ThresholdPerformanceTrigger::verify_params(const conduit::Node &params,
-                              conduit::Node &info)
-{
-    bool res = PerformanceTriggerFilter::verify_params(params, info);
-    if(! params.has_child("threshold") || 
-       ! params["threshold"].dtype().is_number() )
-    {
-        info["errors"].append() = "Missing required numerical parameter 'threshold'";
-        res = false;
-    }
-    //std::cout<<"Verified entropy "<<res<<"\n";
-    return res;
-}
-
-//-----------------------------------------------------------------------------
 
 std::string  
-ThresholdPerformanceTrigger::get_type_name()
+StateThresholdTrigger::get_type_name()
 {
-  return "threshold_performance_trigger";
+  return "state_threshold_trigger";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ThresholdPerformanceTrigger::trigger(const conduit::Node &field)
+StateThresholdTrigger::trigger()
 {
   //field.print();
   // TODO generalize to any data type
   // this is not always a double
+  const conduit::Node &state = this->get_state();
   float64 threshold = params()["threshold"].to_float64();
-  const float64 vals = field.to_float64();
+  const float64 val = state.to_float64();
   
   //const int32 field_size = field["values"].dtype().number_of_elements();
   //std::cout<<"number of elements "<<field_size<<"\n";
   
   return true;
+}
+
+bool   
+StateThresholdTrigger::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    bool res = TriggerFilter::verify_params(params, info);
+    if(! params.has_child("threshold") || 
+       ! params["threshold"].dtype().is_number() )
+    {
+        info["errors"].append() = "Missing required string parameter 'threshold'";
+        res = false;
+    }
+    std::cout<<"Verified state threshold "<<res<<"\n";
+    return res;
 }
 //-----------------------------------------------------------------------------
 };

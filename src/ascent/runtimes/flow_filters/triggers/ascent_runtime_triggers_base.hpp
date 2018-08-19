@@ -84,8 +84,16 @@ namespace filters
 //-----------------------------------------------------------------------------
 class TriggerFilter : public ::flow::Filter
 {
-public:
+private:
     TriggerFilter();
+    const bool m_is_field_trigger;
+    const bool m_is_state_trigger;
+    const bool m_is_topology_trigger;
+
+    std::string get_topology_name();
+public:
+
+    TriggerFilter(bool is_field, bool is_state, bool is_topo);
     virtual ~TriggerFilter();
     
     bool verify_params(const conduit::Node &params,
@@ -93,47 +101,17 @@ public:
     virtual void   declare_interface(conduit::Node &i);
     virtual void   execute();
 protected:
-    virtual bool trigger(const conduit::Node &) = 0;
+    virtual bool trigger() = 0;
     // GetTypeName: unique typename that is used to create the filter the runtime
     virtual std::string  get_type_name() = 0; 
-    // GetData: generic method for getting the underlying data from a derived
-    //          class. Examples are getting a field or topology from the data set.
-    virtual const conduit::Node &get_data() = 0;
+
+    const conduit::Node &get_topology();
+    const conduit::Node &get_field();
+    const conduit::Node &get_state();
+    const conduit::Node &get_coords();
 };
 
 
-class FieldTriggerFilter : public TriggerFilter 
-{
-public:
-    FieldTriggerFilter();
-    virtual ~FieldTriggerFilter();
-    
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-protected:
-    virtual const conduit::Node &get_data();
-    
-};
-
-class MeshTriggerFilter : public TriggerFilter 
-{
-public:
-    MeshTriggerFilter();
-    virtual ~MeshTriggerFilter();
-    
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-protected:
-    virtual const conduit::Node &get_data();
-    
-};
-
-class PerformanceTriggerFilter : public FieldTriggerFilter 
-{
-public:
-    PerformanceTriggerFilter();
-    virtual ~PerformanceTriggerFilter();
-};
 
 struct StateContainer
 {

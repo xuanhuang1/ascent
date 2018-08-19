@@ -82,7 +82,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class EntropyTrigger : public FieldTriggerFilter 
+class EntropyTrigger : public TriggerFilter 
 {
 public:
     EntropyTrigger();
@@ -91,22 +91,22 @@ public:
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
 
-    virtual bool trigger(const conduit::Node &field);
+    virtual bool trigger();
 
     virtual std::string  get_type_name(); 
 };
 
 
-class ThresholdPerformanceTrigger : public PerformanceTriggerFilter 
+class StateThresholdTrigger : public TriggerFilter 
 {
 public:
-    ThresholdPerformanceTrigger();
-    virtual ~ThresholdPerformanceTrigger();
+    StateThresholdTrigger();
+    virtual ~StateThresholdTrigger();
     
     virtual bool   verify_params(const conduit::Node &params,
                                  conduit::Node &info);
 
-    virtual bool trigger(const conduit::Node &field);
+    virtual bool trigger();
 
     virtual std::string  get_type_name(); 
 };

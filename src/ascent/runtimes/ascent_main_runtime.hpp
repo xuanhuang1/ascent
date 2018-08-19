@@ -98,7 +98,7 @@ private:
     void              ResetInfo();
 
     flow::Workspace w;
-    std::string CreateDefaultFilters();
+    std::string CreateDefaultFilters(const std::string source_name);
     void ConvertPipelineToFlow(const conduit::Node &pipeline,
                                const std::string pipeline_name);
     void ConvertPlotToFlow(const conduit::Node &plot,
@@ -117,6 +117,7 @@ private:
     std::string GetDefaultImagePrefix(const std::string scene);
     
     void FindRenders(const conduit::Node &info, conduit::Node &out);
+    bool IsStateVariable(const std::string var_name);
 };
 
 //-----------------------------------------------------------------------------

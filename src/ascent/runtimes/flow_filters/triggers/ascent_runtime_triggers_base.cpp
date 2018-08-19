@@ -96,9 +96,21 @@ namespace filters
 
 //-----------------------------------------------------------------------------
 TriggerFilter::TriggerFilter()
-:Filter()
+:Filter(),
+ m_is_field_trigger(false),
+ m_is_state_trigger(false),
+ m_is_topology_trigger(false)
 {
 // empty
+}
+
+TriggerFilter::TriggerFilter(bool is_field, bool is_state, bool is_topo)
+: Filter(),
+  m_is_field_trigger(is_field),
+  m_is_state_trigger(is_state),
+  m_is_topology_trigger(is_topo)
+{
+
 }
 
 //-----------------------------------------------------------------------------
@@ -116,6 +128,26 @@ TriggerFilter::verify_params(const conduit::Node &params,
     {
         info["errors"].append() = "Missing required conduit::Node parameter 'actions'";
         res = false;
+    }
+
+    if(m_is_field_trigger)
+    {
+      if(! params.has_child("field") || 
+         ! params["field"].dtype().is_string() )
+      {
+          info["errors"].append() = "Missing required string parameter 'field'";
+          res = false;
+      }
+    }
+
+    if(m_is_topology_trigger)
+    {
+      if( params.has_child("topology") && 
+         ! params["topology"].dtype().is_string() )
+      {
+          info["errors"].append() = "Optional parameter 'field' must be a string";
+          res = false;
+      }
     }
     return res;
 }
@@ -137,10 +169,8 @@ TriggerFilter::execute()
       ASCENT_ERROR("TriggerFilter input must be a conduit blueprint data set");
   }
 
-  const conduit::Node &data = this->get_data();
- 
   // triggered better be all true of all false amongst all ranks
-  bool triggered = this->trigger(data);
+  bool triggered = this->trigger();
 
   if(triggered)
   {
@@ -165,41 +195,14 @@ TriggerFilter::execute()
   }
 
 }
-
-//-----------------------------------------------------------------------------
-FieldTriggerFilter::FieldTriggerFilter()
-: TriggerFilter()
+const conduit::Node& TriggerFilter::get_field()
 {
 
-}
-
-//-----------------------------------------------------------------------------
-FieldTriggerFilter::~FieldTriggerFilter()
-{
-
-}
-    
-//-----------------------------------------------------------------------------
-bool   
-FieldTriggerFilter::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
-{
-    bool res = TriggerFilter::verify_params(params, info);
-    if(! params.has_child("field") || 
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
-    std::cout<<"Verified field\n";
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-const conduit::Node &
-FieldTriggerFilter::get_data()
-{
-  ASCENT_INFO("Field Trigger!");
+  if(!m_is_topology_trigger)
+  {
+    ASCENT_ERROR("Trigger "<<get_type_name()<<" is not a field trigger and "<<
+                 "does not have access to get_field()");
+  }
 
   std::string field_name = params()["field"].as_string();
   conduit::Node *data = input<conduit::Node>(0);
@@ -209,58 +212,27 @@ FieldTriggerFilter::get_data()
   if(!data->has_path(field_path))
   {
     (*data)[field_path].print(); 
-    ASCENT_ERROR("Field trigger: data set does not contain field '"<<field_name<<"'"); 
+    ASCENT_ERROR("Trigger: data set does not contain field '"<<field_name<<"'"); 
   }
   
   const conduit::Node &field = (*data)["fields/"+field_name];
   
   return field;
 }
-//-----------------------------------------------------------------------------
-MeshTriggerFilter::MeshTriggerFilter()
-: TriggerFilter()
-{
 
-}
-
-//-----------------------------------------------------------------------------
-MeshTriggerFilter::~MeshTriggerFilter()
+std::string TriggerFilter::get_topology_name()
 {
-
-}
-    
-//-----------------------------------------------------------------------------
-bool   
-MeshTriggerFilter::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
-{
-    bool res = TriggerFilter::verify_params(params, info);
-    // check for optional topology param
-    if( params.has_child("topology") && 
-       ! params["topology"].dtype().is_string() )
-    {
-        info["errors"].append() = "Optional parameter 'field' must be a string";
-        res = false;
-    }
-    std::cout<<"Verified Mesh\n";
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-const conduit::Node &
-MeshTriggerFilter::get_data()
-{
-  ASCENT_INFO("Mesh Trigger!");
 
   conduit::Node *data = input<conduit::Node>(0);
 
   std::string topo_name;
+
   if(params().has_child("topology"))
   {
     topo_name = params()["topology"].as_string();
     if(!data->has_path("topologies/" + topo_name))
     {
-      ASCENT_ERROR("Mesh trigger: requested topology '"<<topo_name<<"' does not exist"); 
+      ASCENT_ERROR("Trigger: requested topology '"<<topo_name<<"' does not exist"); 
     }
   }
   else
@@ -269,22 +241,72 @@ MeshTriggerFilter::get_data()
     topo_name = names[0];
   }
 
+  return topo_name;
+}
+
+const conduit::Node& TriggerFilter::get_topology()
+{
+
+  if(!m_is_topology_trigger)
+  {
+    ASCENT_ERROR("Trigger "<<get_type_name()<<" is not a topology trigger and "<<
+                 "does not have access to get_topology()");
+  }
+
+  conduit::Node *data = input<conduit::Node>(0);
+
+  std::string topo_name = get_topology_name();
+
   const conduit::Node &topo = (*data)["topologies/"+topo_name];
+}
+
+const conduit::Node& TriggerFilter::get_state()
+{
+
+  if(!m_is_state_trigger)
+  {
+    ASCENT_ERROR("Trigger "<<get_type_name()<<" is not a state trigger and "<<
+                 "does not have access to get_state()");
+  }
+
+  conduit::Node *data = input<conduit::Node>(0);
   
-  return topo;
+  if(!data->has_path("state"))
+  {
+    ASCENT_ERROR("Trigger "<<get_type_name()<<": input data has no state.");
+  }
+
+  const conduit::Node &state = (*data)["state"];
+  return state;
 }
-    
-//-----------------------------------------------------------------------------
-PerformanceTriggerFilter::PerformanceTriggerFilter()
-: FieldTriggerFilter()
+
+const conduit::Node& TriggerFilter::get_coords()
 {
+  if(!m_is_topology_trigger && !m_is_field_trigger)
+  {
+    ASCENT_ERROR("Trigger "<<get_type_name()<<" is neither a topology trigger "<<
+                 "nor a field trigger and does not have access to get_coords");
+  }
 
-}
+  conduit::Node *data = input<conduit::Node>(0);
 
-//-----------------------------------------------------------------------------
-PerformanceTriggerFilter::~PerformanceTriggerFilter()
-{
+  std::string topo_name = get_topology_name();
 
+  if(!data->has_path("topologies/"+topo_name+"/coordset"))
+  {
+    ASCENT_ERROR("Trigger: cannot find path '"<<
+                 "topologies/"+topo_name+"/coordset'");
+  }
+
+  const std::string coords_name = (*data)["topologies/"+topo_name+"/coordset"].as_string();
+
+  if(!data->has_path("coordsets/"+coords_name))
+  {
+    ASCENT_ERROR("Trigger: cannot find coordset '"<<
+                 "coordsets/"<<coords_name<<"'");
+  }
+
+  const conduit::Node &coords = (*data)["coordsets/"+coords_name];
 }
 
 //-----------------------------------------------------------------------------

@@ -247,9 +247,9 @@ AscentRuntime::Publish(const conduit::Node &data)
 
 //-----------------------------------------------------------------------------
 std::string 
-AscentRuntime::CreateDefaultFilters()
+AscentRuntime::CreateDefaultFilters(const std::string source_name)
 {
-    const std::string end_filter = "vtkh_data";
+    const std::string end_filter = "vtkh_data_"+source_name;
     if(w.graph().has_filter(end_filter))
     {
       return end_filter;
@@ -262,21 +262,22 @@ AscentRuntime::CreateDefaultFilters()
     conduit::Node params;
     params["protocol"] = "mesh";
 
-    w.graph().add_filter("blueprint_verify", // registered filter name
-                         "verify",           // "unique" filter name
+    w.graph().add_filter("blueprint_verify",    // registered filter name
+                         "verify_"+source_name, // "unique" filter name
                          params);
     
-    w.graph().connect("source",
-                      "verify",
+    w.graph().connect(source_name,
+                      "verify_"+source_name,
                       0);        // default port
 
     w.graph().add_filter("ensure_vtkh",
-                         "vtkh_data");
+                         end_filter);
 
-    w.graph().connect("verify",
-                      "vtkh_data",
+    w.graph().connect("verify_"+source_name,
+                      end_filter,
                       0);        // default port
 
+    //w.graph().print();
     return end_filter;
 }
 //-----------------------------------------------------------------------------
@@ -284,7 +285,7 @@ void
 AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                                      const std::string pipeline_name)
 {
-    std::string prev_name = CreateDefaultFilters(); 
+    std::string prev_name = CreateDefaultFilters("source"); 
 
     for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
@@ -427,7 +428,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else if(extract["type"].as_string() == "performance_threshold")
   {
-    filter_name = "threshold_performance_trigger";
+    filter_name = "state_threshold_trigger";
   }
   else if(extract["type"].as_string() == "python")
   {
@@ -507,16 +508,6 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   flow::Filter *filter = w.graph().add_filter(filter_name,
                                               extract_name,
                                               params);
-  bool needs_domain_mesh = false;
-  std::string domain_mesh_name = "domain_mesh_" + extract_name;
-  if(dynamic_cast<runtime::filters::PerformanceTriggerFilter*>(filter))
-  {
-    std::cout<<"*********PERF**********\n";
-    needs_domain_mesh = true;
-    w.graph().add_filter("domain_mesh",
-                         domain_mesh_name,
-                         empty_params);
-  }
   //
   // We can't connect the extract to the pipeline since
   // we want to allow users to specify actions any any order 
@@ -532,20 +523,47 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     extract_source = "source";
   }
   
-  if(needs_domain_mesh)
-  {
-    m_connections[ensure_name] = extract_source;
-    m_connections[domain_mesh_name] = ensure_name;
-    m_connections[extract_name] = domain_mesh_name;
-  }
-  else
-  {
-    m_connections[ensure_name] = extract_source;
-    m_connections[extract_name] = ensure_name;
-  }
+  m_connections[ensure_name] = extract_source;
+  m_connections[extract_name] = ensure_name;
 
 }
 //-----------------------------------------------------------------------------
+bool AscentRuntime::IsStateVariable(const std::string var_name)
+{
+  if(m_data.has_path("state"))
+  {
+    auto names = m_data["state"].child_names(); 
+    for(int i = 0; i < names.size(); ++i)
+    {
+      if(names[i] == var_name)
+      {
+        conduit::DataType dtype = m_data["state"].child(i).dtype();
+        if(dtype.is_number() && !dtype.is_list())
+        {
+          return true;
+        }
+      }
+    }
+  }
+
+  if(m_data.has_path("state/performance"))
+  {
+    auto names = m_data["state/performance"].child_names(); 
+    for(int i = 0; i < names.size(); ++i)
+    {
+      if(names[i] == var_name)
+      {
+        conduit::DataType dtype = m_data["state/performance"].child(i).dtype();
+        if(dtype.is_number() && !dtype.is_list())
+        {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
 //-----------------------------------------------------------------------------
 void 
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
@@ -576,7 +594,30 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   {
     // default pipeline: directly connect to published data
     plot_source = "default";
+    // check for state plot and reduce the mesh if variable 
+    // only exists on entire rank
+    bool needs_domain_mesh = IsStateVariable(plot["params/field"].as_string());
+    if(needs_domain_mesh)
+    {
+      conduit::Node empty_params;
+      std::string domain_mesh_name = "domain_mesh_" + plot_name;
+
+      w.graph().add_filter("domain_mesh",
+                           domain_mesh_name,
+                           empty_params);
+
+      w.graph().connect("source",         // src
+                        domain_mesh_name, // dest
+                        0);               // default port
+
+      std::string source_name = CreateDefaultFilters(domain_mesh_name);
+
+      // do a domain_mesh plot on the published input
+      //m_connections[domain_mesh_name] = source_name;
+      plot_source = source_name;
+    }
   }
+
   m_connections[plot_name] = plot_source;
 
 }
@@ -635,7 +676,7 @@ AscentRuntime::ConnectGraphs()
     std::string pipeline = m_connections[names[i]].as_string(); 
     if(pipeline == "default")
     { 
-      pipeline = CreateDefaultFilters(); 
+      pipeline = CreateDefaultFilters("source"); 
     }
     else if(!w.graph().has_filter(pipeline))
     {
@@ -664,7 +705,7 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     }
     else
     {
-      pipeline = CreateDefaultFilters(); 
+      pipeline = CreateDefaultFilters("source"); 
     }
     pipelines.push_back(pipeline);
   }
@@ -975,10 +1016,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
         else if( action_name == "execute")
         {
           ConnectGraphs();
+
           w.info(m_info["flow_graph"]);
           w.execute();
           w.registry().reset();
-          
           Node msg;
           this->Info(msg["info"]);
           ascent::about(msg["about"]);
