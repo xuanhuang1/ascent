@@ -89,7 +89,11 @@ public:
     void   execute(const conduit::Node &actions);
     void   info(conduit::Node &info_out);
     void   close();
-
+     
+    template<typename FilterType>
+    static void register_filter(const std::string api_name,
+                                const std::string filter_type,
+                                const std::string input_type);
 private:
     
     Runtime    *m_runtime;
