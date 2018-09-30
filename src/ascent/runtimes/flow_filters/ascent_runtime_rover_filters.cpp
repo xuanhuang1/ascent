@@ -273,6 +273,11 @@ RoverXRay::execute()
        settings.m_secondary_field = params()["emission"].as_string();
     }
   
+    if(params().has_path("unit_scalar"))
+    {
+       settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+    }
+  
     
     settings.m_render_mode = rover::energy;
 
