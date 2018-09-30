@@ -115,7 +115,7 @@ namespace filters
 namespace detail
 {
 vtkh::DataSet *
-transmogrify_source(const conduit::Node *n_input)
+transmogrify_source(const conduit::Node *n_input, int refinement)
 {
 
   EnsureLowOrder ensure;
@@ -127,7 +127,7 @@ transmogrify_source(const conduit::Node *n_input)
     MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(*n_input);
     conduit::Node *lo_dset = new conduit::Node;
     //MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
-    MFEMDataAdapter::Linearize(domains, *lo_dset, 2);
+    MFEMDataAdapter::Linearize(domains, *lo_dset, refinement);
     delete domains;
 
     dataset = VTKHDataAdapter::BlueprintToVTKHDataSet(*lo_dset, zero_copy);
@@ -218,13 +218,19 @@ RoverXRay::execute()
 
     ASCENT_INFO("XRay sees everything!");
     vtkh::DataSet *dataset = nullptr;
+    int refinement = 2;
+
+    if(params().has_path("refinement"))
+    {
+      refinement = params()["refinement"].to_int32();
+    }
 
     bool zero_copy= true;
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input);
+        dataset = detail::transmogrify_source(n_input, refinement);
     }
     
     vtkmCamera camera;
@@ -342,11 +348,17 @@ RoverVolume::execute()
     ASCENT_INFO("Volume mostly sees everything!");
     vtkh::DataSet *dataset = nullptr;
 
+    int refinement = 2;
+
+    if(params().has_path("refinement"))
+    {
+      refinement = params()["refinement"].to_int32();
+    }
     if(input(0).check_type<Node>())
     {
         // convert from blueprint to vtk-h
         const Node *n_input = input<Node>(0);
-        dataset = detail::transmogrify_source(n_input);
+        dataset = detail::transmogrify_source(n_input, refinement);
     }
     
     vtkmCamera camera;
@@ -385,11 +397,18 @@ RoverVolume::execute()
     settings.m_primary_field = params()["field"].as_string();
 
     settings.m_render_mode = rover::volume;
-    vtkmColorTable color_table("cool to warm");
-    color_table.AddPointAlpha(0.0, .01);
-    color_table.AddPointAlpha(0.5, .02);
-    color_table.AddPointAlpha(1.0, .01);
-    settings.m_color_table = color_table;
+    if(params().has_path("color_table"))
+    {
+      settings.m_color_table = parse_color_table(params()["color_table"]);
+    }
+    else
+    {
+      vtkmColorTable color_table("cool to warm");
+      color_table.AddPointAlpha(0.0, .01);
+      color_table.AddPointAlpha(0.5, .02);
+      color_table.AddPointAlpha(1.0, .01);
+      settings.m_color_table = color_table;
+    }
 
     tracer.set_render_settings(settings);
     for(int i = 0; i < dataset->GetNumberOfDomains(); ++i)

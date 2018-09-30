@@ -289,12 +289,12 @@ struct DataSet
       node["fields/nodal_noise/association"] = "vertex";
       node["fields/nodal_noise/type"]        = "scalar";
       node["fields/nodal_noise/topology"]    = "mesh";
-      node["fields/nodal_noise/values"].set_external(m_nodal_scalars);
+      node["fields/nodal_noise/values"].set_external(m_nodal_scalars, m_point_size);
 
       node["fields/zonal_noise/association"] = "element";
       node["fields/zonal_noise/type"]        = "scalar";
       node["fields/zonal_noise/topology"]    = "mesh";
-      node["fields/zonal_noise/values"].set_external(m_zonal_scalars);
+      node["fields/zonal_noise/values"].set_external(m_zonal_scalars, m_cell_size);
    }
 
    void Print()
@@ -476,6 +476,20 @@ int main(int argc, char** argv)
 
   scenes["scene1/plots/plt2/type"]         = "volume";
   scenes["scene1/plots/plt2/params/field"] = "zonal_noise";
+  scenes["scene1/plots/plt2/params/color_table"] = "Black, Blue and White";
+
+  std::vector<double> bg_color;
+  bg_color.push_back(1.0);
+  bg_color.push_back(1.0);
+  bg_color.push_back(1.0);
+
+  std::vector<double> fg_color;
+  fg_color.push_back(1.0);
+  fg_color.push_back(1.0);
+  fg_color.push_back(1.0);
+
+  scenes["scene1/renders/r1/bg_color"].set(bg_color);
+  scenes["scene1/renders/r1/fg_color"].set(fg_color);
 
   conduit::Node actions;
   conduit::Node &add_pipelines = actions.append();
