@@ -64,6 +64,13 @@ IF(MFEM_FOUND)
     add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
 endif()
 
-
+if(MPI_FOUND AND ENABLE_MPI)
+    message(STATUS "MPI enabled: Adding related unit tests")
+    # this uses 2 procs
+    #add_cpp_mpi_test(TEST t_mpi_exception_smoke NUM_MPI_TASKS)
+    add_cpp_mpi_test(TEST t_mpi_exception_smoke NUM_MPI_TASKS DEPENDS_ON conduit)
+else()
+    message(STATUS "MPI disabled: Skipping related tests")
+endif()
 
 
