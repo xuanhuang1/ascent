@@ -92,6 +92,8 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/Gradient.hpp>
+#include <vtkh/filters/Histogram.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -2653,6 +2655,215 @@ VTKHLog::execute()
     vtkh::DataSet *log_output = logger.GetOutput();
 
     set_output<vtkh::DataSet>(log_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHQCriterion::VTKHQCriterion()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHQCriterion::~VTKHQCriterion()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_qcriterion";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHQCriterion::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHQCriterion::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_qcriterion input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Gradient grad;
+    grad.SetInput(data);
+    grad.SetField(field_name);
+    vtkh::GradientParameters grad_params;
+    grad_params.compute_qcriterion = true;
+    if(params().has_path("output_name"))
+    {
+      grad_params.qcriterion_name = params()["output_name"].as_string();
+    }
+
+    grad.SetParameters(grad_params);
+    grad.Update();
+
+    vtkh::DataSet *grad_output = grad.GetOutput();
+
+    set_output<vtkh::DataSet>(grad_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHHistogram::VTKHHistogram()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHHistogram::~VTKHHistogram()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_histogram";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHHistogram::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHHistogram::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_histogram input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::Histogram hist;
+    hist.SetInput(data);
+    hist.SetField(field_name);
+
+    hist.Update();
+
+    vtkh::DataSet *hist_output = hist.GetOutput();
+    delete hist_output;
+    //set_output<vtkh::DataSet>(grad_output);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHFieldMinMax::VTKHFieldMinMax()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHFieldMinMax::~VTKHFieldMinMax()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHFieldMinMax::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_field_min_max";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHFieldMinMax::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHFieldMinMax::execute()
+{
+
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_field_min_max input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+
+    vtkm::cont::ArrayHandle<vtkm::Range> range = data->GetRange(field_name);
 }
 
 //-----------------------------------------------------------------------------

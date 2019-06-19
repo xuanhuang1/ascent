@@ -356,6 +356,45 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class VTKHQCriterion: public ::flow::Filter
+{
+public:
+    VTKHQCriterion();
+    virtual ~VTKHQCriterion();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class VTKHHistogram : public ::flow::Filter
+{
+public:
+    VTKHHistogram();
+    virtual ~VTKHHistogram();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class VTKHFieldMinMax : public ::flow::Filter
+{
+public:
+    VTKHFieldMinMax();
+    virtual ~VTKHFieldMinMax();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class VTKHNoOp : public ::flow::Filter
 {
 public:

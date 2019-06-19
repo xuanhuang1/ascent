@@ -140,6 +140,10 @@ register_builtin()
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 
+    AscentRuntime::register_filter_type<VTKHQCriterion>("transforms", "qcriterion");
+    AscentRuntime::register_filter_type<VTKHHistogram>("transforms", "histogram");
+    AscentRuntime::register_filter_type<VTKHFieldMinMax>("transforms", "field_min_max");
+
     AscentRuntime::register_filter_type<AddPlot>();
     AscentRuntime::register_filter_type<CreatePlot>();
     AscentRuntime::register_filter_type<CreateScene>();
