@@ -4,22 +4,77 @@
 #include <conduit_blueprint.hpp>
 #include <mpi.h>
 #include <ctime>
+#include <cassert>
+#include "diy.h"
+
+/*#include "BabelFlow/mpi/Controller.h"
+#include "KWayMerge.h"
+#include "KWayTaskMap.h"
+#include "SortedUnionFindAlgorithm.h"
+#include "SortedJoinAlgorithm.h"
+#include "LocalCorrectionAlgorithm.h"
+#include "MergeTree.h"
+#include "AugmentedMergeTree.h"
+#include "diy.h"
+#include <fstream>*/
 
 using namespace ascent;
 using namespace conduit;
+
 
 int main(int argc, char **argv)
 {
   using namespace std;
   int provided;
 
-  int32_t dim = 256;
-  if (argc > 1) {
-    dim = stoi(argv[1]);
+  int32_t dim = 3;
+  //if (argc > 1) {
+  //  dim = stoi(argv[1]);
+  //}
+  if (argc < 9) {
+    fprintf(stderr,"Usage: %s -f <input_data> -d <Xdim> <Ydim> <Zdim> \
+                    -p <dx> <dy> <dz> -m <fanin> -t <threshold>\n", argv[0]);
+    return 0;
   }
+//arg parse
+  int tot_blocks;
+  int data_size_[3];             // {x_size, y_size, z_size}
+  int block_decomp[3];     // block decomposition
+  int min[3], max[3], size[3];  // block extents
+  int nblocks;                  // my local number of blocks
+  int ghost[6] = {0, 0, 0, 0, 0, 0};
+  int share_face = 1;           // share a face among the blocks
 
-  auto err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  assert(err == MPI_SUCCESS);
+  int test_block_size[3];
+  uint32_t valence = 2;
+  //FunctionType threshold_ = (FunctionType)(-1)*FLT_MAX;
+  int threshold_ = (int)(-1)*FLT_MAX;
+  char* dataset;
+  for (int i = 1; i < argc; i++){
+    if (!strcmp(argv[i],"-d")){
+      data_size_[0] = atoi(argv[++i]); 
+      data_size_[1] = atoi(argv[++i]); 
+      data_size_[2] = atoi(argv[++i]); 
+    }
+    if (!strcmp(argv[i],"-p")){
+      block_decomp[0] = atoi(argv[++i]);                                                                                                           
+      block_decomp[1] = atoi(argv[++i]);                                                                                                           
+      block_decomp[2] = atoi(argv[++i]);
+    }
+    if (!strcmp(argv[i],"-m"))
+      valence = atoi(argv[++i]);
+    if (!strcmp(argv[i],"-t"))
+      threshold_ = atof(argv[++i]);
+    if (!strcmp(argv[i],"-f"))
+      dataset = argv[++i];
+  }
+  dim =  block_decomp[0]*block_decomp[1]*block_decomp[2];
+  //
+
+  //auto err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  //assert(err == MPI_SUCCESS);
+	// changed to MPI_Init for DIY_init
+  MPI_Init(&argc, &argv);
 
   clock_t start, finish;
 
@@ -29,26 +84,34 @@ int main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-  Ascent a;
-  conduit::Node ascent_opt;
-  ascent_opt["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
-  ascent_opt["runtime/type"] = "ascent";
-  a.open(ascent_opt);
+  // num of processes should match size dim
+  assert(dim == mpi_size);
+  //
+
+
+
+
+
+  //Ascent a;
+  //conduit::Node ascent_opt;
+  //ascent_opt["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  //ascent_opt["runtime/type"] = "ascent";
+  //a.open(ascent_opt);
 
   // user defines n_blocks per dimension
   // user provides the size of the whole data
-  vector <int32_t> data_size({dim, dim, dim});
-  vector <int32_t> n_blocks({2, 2, 2});
+  vector <int32_t> data_size({data_size_[0], data_size_[1], data_size_[2]});
+  vector <int32_t> n_blocks({ block_decomp[0],  block_decomp[1],  block_decomp[2]});
   int32_t block_size[3] = {data_size[0] / n_blocks[0], data_size[1] / n_blocks[1], data_size[2] / n_blocks[2]};
   // compute the boundaries of the needed block
-  vector <int32_t> low(3);
+  /*vector <int32_t> low(3);
   vector <int32_t> high(3);
   low[0] = mpi_rank % n_blocks[0] * block_size[0];
   low[1] = mpi_rank / n_blocks[0] % n_blocks[1] * block_size[1];
   low[2] = mpi_rank / n_blocks[1] / n_blocks[2] % n_blocks[2] * block_size[2];
   high[0] = std::min(low[0] + block_size[0], data_size[0] - 1);
   high[1] = std::min(low[1] + block_size[1], data_size[1] - 1);
-  high[2] = std::min(low[2] + block_size[2], data_size[2] - 1);
+  high[2] = std::min(low[2] + block_size[2], data_size[2] - 1);*/
 
 
 
@@ -59,13 +122,13 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // size of the local data
-  int32_t num_x = high[0] - low[0] + 1;
-  int32_t num_y = high[1] - low[1] + 1;
-  int32_t num_z = high[2] - low[2] + 1;
-  vector<float> block_data(num_x * num_y * num_z, 0.f);
+  //int32_t num_x = high[0] - low[0] + 1;
+  //int32_t num_y = high[1] - low[1] + 1;
+  //int32_t num_z = high[2] - low[2] + 1;
+  //vector<float> block_data(num_x * num_y * num_z, 0.f);
 
   // copy values from global data
-  {
+  /*{
     Node whole_data_node;
     conduit::blueprint::mesh::examples::braid("hexs",
                                               data_size[0],
@@ -98,7 +161,82 @@ int main(int argc, char **argv)
         offset += num_x;
       }
     }
+  }*/
+  
+  // diy decompose data
+	clock_t start_a,finish_a, file_io_start, file_io_end;
+  double proc_time, diy_time, file_io_time;
+  start_a = clock();
+	int num_threads = 1;
+	int given[3] = {(int)block_decomp[0],
+	                (int)block_decomp[1],
+	               (int)block_decomp[2]};
+	
+	tot_blocks = block_decomp[0]*block_decomp[1]*block_decomp[2];
+
+	// initialize DIY after initializing MPI
+	DIY_Init(3, data_size_, num_threads, MPI_COMM_WORLD);
+
+	// decompose domain
+	DIY_Decompose(ROUND_ROBIN_ORDER, tot_blocks,
+	              &nblocks, share_face, ghost, given);
+	
+	// allocate pointers to data, in this example, the data type is int
+	// the memset to 0 is needed to tell DIY to allocate the memory for us
+	int *data_diy[nblocks];
+	memset(data_diy, 0, sizeof(int*) * nblocks);
+	// read blocks and print block bounds
+	// Each rank gets only one block
+	DIY_Block_starts_sizes(0, 0, min, size);
+	
+	if (sizeof(int) == 4)
+	  DIY_Add_data_raw(min, size, dataset, DIY_FLOAT, (void**)&(data_diy[0]));
+	if (sizeof(int) == 2)
+	  DIY_Add_data_raw(min, size, dataset, DIY_SHORT, (void**)&(data_diy[0]));
+	if (sizeof(int) == 8)
+	  DIY_Add_data_raw(min, size, dataset, DIY_DOUBLE, (void**)&(data_diy[0]));
+	for (int j = 0; j < 3; j++)
+   	max[j] = min[j] + size[j]-1;
+  //fprintf(stderr, "Process rank = %d block local id = %d min = [%d %d %d] "
+  //        "max = [%d %d %d] size = [%d %d %d]\n", mpi_rank, 0, 
+  //        min[0], min[1], min[2], max[0], max[1], max[2],
+  //        size[0], size[1], size[2]);
+  //fprintf(stderr, "\n");
+	DIY_Read_data_all();
+	finish = clock();
+	diy_time = (double(finish)-double(start))/CLOCKS_PER_SEC;
+	
+	// end of diy decompose data
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (mpi_rank ==0)
+	  std::cerr << "Data Loaded! Time : "<< diy_time <<"\n";
+	
+  	
+  // size of the local data
+  vector <int32_t> low(3);
+  vector <int32_t> high(3);
+ 	for(int i=0;i<3;i++){
+  	high[i] = max[i];
+  	low[i] = min[i];
   }
+  int32_t num_x = high[0] - low[0] + 1;
+  int32_t num_y = high[1] - low[1] + 1;
+  int32_t num_z = high[2] - low[2] + 1;
+  
+  
+  //vector<float> block_data(num_x*num_y*num_z, 0.f);
+	// copy the subsection of data
+  //for(int i=0;i<block_data.size();i++){
+  //	block_data[i] = (float)data_diy[0][i];
+  //}
+	
+	float * block_data = (float*)data_diy[0];
+
+  Ascent a;
+  conduit::Node ascent_opt;
+  ascent_opt["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  ascent_opt["runtime/type"] = "ascent";
+  a.open(ascent_opt);
 
   // build the local mesh.
   Node mesh;
@@ -122,7 +260,7 @@ int main(int argc, char **argv)
     stringstream ss;
     ss << "data" << mpi_rank << ".bin";
     ofstream bofs(ss.str(), ios::out | ios::binary);
-    bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(float));
+    bofs.write(reinterpret_cast<char *>(block_data), num_x*num_y*num_z* sizeof(int));
     bofs.close();
   }
   // output text block parameters
@@ -183,7 +321,125 @@ int main(int argc, char **argv)
   }
 
   a.close();
+   DIY_Finalize();
   MPI_Finalize();
   return 0;
 
 }
+
+int main_(int argc, char *argv[])
+{
+  if (argc < 9) {
+    fprintf(stderr,"Usage: %s -f <input_data> -d <Xdim> <Ydim> <Zdim> \
+                    -p <dx> <dy> <dz> -m <fanin> -t <threshold>\n", argv[0]);
+    return 0;
+  }
+
+  clock_t start,finish, file_io_start, file_io_end;
+  double proc_time, diy_time, file_io_time;
+  start = clock();
+
+  MPI_Init(&argc, &argv);
+  int rank;
+  int num_processes;
+  int num_threads = 1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+
+  int dim = 3;
+  int tot_blocks;
+  int data_size[3];             // {x_size, y_size, z_size}
+  uint32_t block_decomp[3];     // block decomposition
+  int min[3], max[3], size[3];  // block extents
+  int nblocks;                  // my local number of blocks
+  int ghost[6] = {0, 0, 0, 0, 0, 0};
+  int share_face = 1;           // share a face among the blocks
+
+  int test_block_size[3];
+  uint32_t valence = 2;
+  float threshold = (float)(-1)*FLT_MAX;
+  char* dataset;
+
+  for (int i = 1; i < argc; i++){
+    if (!strcmp(argv[i],"-d")){
+      data_size[0] = atoi(argv[++i]);                                                                                                              
+      data_size[1] = atoi(argv[++i]);                                                                                                              
+      data_size[2] = atoi(argv[++i]); 
+    }
+    if (!strcmp(argv[i],"-p")){
+      block_decomp[0] = atoi(argv[++i]);                                                                                                           
+      block_decomp[1] = atoi(argv[++i]);                                                                                                           
+      block_decomp[2] = atoi(argv[++i]);
+    }
+    if (!strcmp(argv[i],"-m"))
+      valence = atoi(argv[++i]);
+    if (!strcmp(argv[i],"-t"))
+      threshold = atof(argv[++i]);
+    if (!strcmp(argv[i],"-f"))
+      dataset = argv[++i];
+  }
+  
+
+ // if (rank == 0) {
+ // // Read the input from the file
+ //     char file_name[256];
+ //     sprintf(file_name,"%s", argv[1]);
+ //     FILE* input = fopen(file_name, "rb");
+ //     if (input == NULL) {
+ //       fprintf(stderr, "Input File not found!\n");
+ //       return 1;
+ //     }
+
+ //     test_block_size[0] = 280;
+ //     test_block_size[1] = 280;
+ //     test_block_size[2] = 280;
+
+ //     // extract block from file
+ //     extractBlock(input, data_size, test_block_size);
+ //     fclose(input);
+ // }
+  
+  int given[3] = {(int)block_decomp[0],
+                  (int)block_decomp[1],
+                  (int)block_decomp[2]};
+  
+  tot_blocks = block_decomp[0]*block_decomp[1]*block_decomp[2];
+
+  // initialize DIY after initializing MPI
+  DIY_Init(3, data_size, num_threads, MPI_COMM_WORLD);
+  DIY_Decompose(ROUND_ROBIN_ORDER, tot_blocks,
+                &nblocks, share_face, ghost, given);
+  
+  // allocate pointers to data, in this example, the data type is int
+  // the memset to 0 is needed to tell DIY to allocate the memory for us
+  float *data_diy[nblocks];
+  memset(data_diy, 0, sizeof(float*) * nblocks);
+  
+  // read blocks and print block bounds
+  // Each rank gets only one block
+  DIY_Block_starts_sizes(0, 0, min, size);
+  DIY_Add_data_raw(min, size, dataset, DIY_FLOAT, (void**)&(data_diy[0]));
+  
+  for (int j = 0; j < 3; j++)
+    max[j] = min[j] + size[j]-1;
+  //fprintf(stderr, "Process rank = %d block local id = %d min = [%d %d %d] "
+  //         "max = [%d %d %d] size = [%d %d %d]\n", rank, 0, 
+  //         min[0], min[1], min[2], max[0], max[1], max[2],
+  //         size[0], size[1], size[2]);
+  //fprintf(stderr, "\n");
+  
+  // read all the blocks that were posted
+  DIY_Read_data_all();
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (rank ==0)
+    std::cerr << "Data Loaded! Time : "<< diy_time <<"\n";
+  
+  start = clock();
+  		for (int i=0;i<nblocks;i++)
+		std::cout << data_diy[0][i]<<" ";
+		std::cout <<"\n";
+
+  DIY_Finalize();
+    MPI_Finalize();
+  }
+
