@@ -74,6 +74,10 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
 
+#Xuan: has to force find threads
+find_package(Threads)
+# set babelflow dir
+set(BabelFlow_DIR "" CACHE PATH "path to BabelFlow installation")
 
 ################################
 # Populate the cmake gui
