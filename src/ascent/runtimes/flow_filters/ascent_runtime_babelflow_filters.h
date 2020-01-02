@@ -18,7 +18,9 @@ namespace runtime
 namespace filter
 {
 
-enum op
+// Xuan
+// change here from op to op_enum to avoid naming dup
+enum op_enum
 {
   NOOP = 0,
   PMT
@@ -27,7 +29,7 @@ enum op
 class BabelFlow : public ::flow::Filter
 {
 private:
-  op op = NOOP;
+  op_enum op = NOOP;
 
 public:
   BabelFlow()= default;

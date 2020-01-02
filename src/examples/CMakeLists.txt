@@ -52,6 +52,9 @@ add_subdirectory(proxies/kripke)
 add_subdirectory(proxies/cloverleaf3d-ref)
 add_subdirectory(synthetic/noise)
 
+#if (ASCENT_BABELFLOW) (TODO), create a subfolder babelflow/pmt
+add_subdirectory(babelflow_pmt)
+
 if(MFEM_FOUND)
   add_subdirectory(proxies/laghos)
 endif()
